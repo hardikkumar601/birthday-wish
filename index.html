@@ -291,7 +291,7 @@
       display: grid;
       justify-items: center;
       text-align: center;
-      animation: arrive 800ms cubic-bezier(.2, .75, .25, 1) both;
+      animation: gift-appear 800ms ease both;
     }
 
     .gift-kicker {
@@ -314,6 +314,34 @@
 
     .gift-title span { color: #ffb59d; font-style: italic; }
 
+    .recipient-field {
+      display: grid;
+      width: min(100%, 300px);
+      gap: 8px;
+      margin-top: 24px;
+      color: rgba(255, 243, 223, .85);
+      font-size: 12px;
+      text-align: left;
+    }
+
+    .recipient-field input {
+      width: 100%;
+      height: 46px;
+      padding: 0 14px;
+      border: 1px solid rgba(255, 243, 223, .38);
+      border-radius: 4px;
+      color: var(--cream);
+      background: rgba(255, 243, 223, .08);
+      font: inherit;
+      font-size: 15px;
+    }
+
+    .recipient-field input:focus-visible {
+      border-color: var(--gold);
+      outline: 2px solid var(--gold);
+      outline-offset: 2px;
+    }
+
     .gift-trigger {
       display: grid;
       justify-items: center;
@@ -333,7 +361,7 @@
       width: 146px;
       height: 118px;
       filter: drop-shadow(0 18px 22px rgba(0, 0, 0, .28));
-      animation: gift-bob 2.4s ease-in-out infinite;
+      animation: gift-glow 2.4s ease-in-out infinite;
       transition: transform 350ms ease;
     }
 
@@ -409,9 +437,14 @@
       text-transform: uppercase;
     }
 
-    @keyframes gift-bob {
-      0%, 100% { translate: 0 0; }
-      50% { translate: 0 -8px; }
+    @keyframes gift-glow {
+      0%, 100% { filter: drop-shadow(0 18px 22px rgba(0, 0, 0, .28)); }
+      50% { filter: drop-shadow(0 18px 30px rgba(245, 202, 114, .34)); }
+    }
+
+    @keyframes gift-appear {
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
 
     @keyframes gift-pop {
@@ -592,8 +625,12 @@
   <section class="gift-screen" id="gift-screen" aria-labelledby="gift-title">
     <div class="gift-content">
       <p class="gift-kicker">A little birthday surprise</p>
-      <h1 class="gift-title" id="gift-title">Psst... this is for <span>Ananya.</span></h1>
-      <button class="gift-trigger" id="unwrap-gift" type="button" aria-label="Unwrap Ananya's birthday surprise">
+      <h1 class="gift-title" id="gift-title">Psst... this is for <span id="gift-recipient">Ananya.</span></h1>
+      <label class="recipient-field" for="recipient-name">
+        <span>Uska naam</span>
+        <input id="recipient-name" name="recipient" type="text" value="Ananya" maxlength="40" autocomplete="off">
+      </label>
+      <button class="gift-trigger" id="unwrap-gift" type="button" aria-label="Unwrap birthday surprise">
         <span class="gift-box" aria-hidden="true">
           <span class="gift-body"></span>
           <span class="gift-lid"></span>
@@ -605,7 +642,7 @@
   </section>
 
   <main class="scene">
-    <div class="topline">A little celebration, just for Ananya</div>
+    <div class="topline">A little celebration, just for <span id="topline-recipient">Ananya</span></div>
     <span class="sprinkle" aria-hidden="true"></span>
     <span class="sprinkle two" aria-hidden="true"></span>
     <span class="sprinkle three" aria-hidden="true"></span>
@@ -613,8 +650,8 @@
     <section class="content" aria-labelledby="birthday-title">
       <div class="copy">
         <p class="eyebrow">Today is all about you</p>
-        <h1 id="birthday-title">Happy Birthday,<span>Ananya!</span></h1>
-        <p class="intro">Ananya, tumhari smile meri favourite cheez hai. Aaj ka din utna hi khoobsurat ho jitni tum meri duniya banati ho.</p>
+        <h1 id="birthday-title">Happy Birthday,<span id="hero-recipient">Ananya!</span></h1>
+        <p class="intro"><span id="intro-recipient">Ananya</span>, tumhari smile meri favourite cheez hai. Aaj ka din utna hi khoobsurat ho jitni tum meri duniya banati ho.</p>
         <div class="actions">
           <button class="surprise-button" id="open-note" type="button">
             <span>Open your surprise</span><span class="button-icon" aria-hidden="true">&#8599;</span>
@@ -634,13 +671,15 @@
     <section class="note" role="dialog" aria-modal="true" aria-labelledby="note-title" aria-describedby="note-copy">
       <button class="close-button" id="close-note" type="button" aria-label="Close birthday note">&times;</button>
       <p class="note-kicker">A little note for you</p>
-      <h2 id="note-title">To my Ananya</h2>
-      <p class="note-copy" id="note-copy">Happy birthday, Ananya. Tumhare saath har chhoti si baat special ban jaati hai. I hope this year brings you all the happiness, laughter, and love that you give to everyone around you. Aaj bas tum smile karti rehna, baaki sab main sambhaal lunga.</p>
-      <p class="signature">Tumhara Aarav &#9829;</p>
+      <h2 id="note-title">To my <span id="note-recipient">Ananya</span></h2>
+      <p class="note-copy" id="note-copy">Happy birthday, <span id="letter-recipient">Ananya</span>. Tumhare saath har chhoti si baat special ban jaati hai. I hope this year brings you all the happiness, laughter, and love that you give to everyone around you. Aaj bas tum smile karti rehna, baaki sab main sambhaal lunga.</p>
+      <p class="signature">Tumhara Hardik &#9829;</p>
     </section>
   </div>
 
   <script>
+    const defaultRecipient = "Ananya";
+    const recipientInput = document.querySelector("#recipient-name");
     const giftScreen = document.querySelector("#gift-screen");
     const unwrapButton = document.querySelector("#unwrap-gift");
     const openButton = document.querySelector("#open-note");
@@ -649,7 +688,31 @@
     const cake = document.querySelector("#cake");
     let previousFocus;
 
+    function updateRecipient(name) {
+      const recipient = name.trim().slice(0, 40) || defaultRecipient;
+      document.querySelector("#gift-recipient").textContent = `${recipient}.`;
+      document.querySelector("#topline-recipient").textContent = recipient;
+      document.querySelector("#hero-recipient").textContent = `${recipient}!`;
+      document.querySelector("#intro-recipient").textContent = recipient;
+      document.querySelector("#note-recipient").textContent = recipient;
+      document.querySelector("#letter-recipient").textContent = recipient;
+      document.title = `Happy Birthday, ${recipient}`;
+      return recipient;
+    }
+
+    const recipientFromUrl = new URLSearchParams(window.location.search).get("to");
+    if (recipientFromUrl?.trim()) recipientInput.value = recipientFromUrl.trim().slice(0, 40);
+    updateRecipient(recipientInput.value);
+    recipientInput.addEventListener("input", () => updateRecipient(recipientInput.value));
+
     function unwrapGift() {
+      const recipient = updateRecipient(recipientInput.value);
+      recipientInput.value = recipient;
+      if (window.location.protocol !== "file:") {
+        const personalizedUrl = new URL(window.location.href);
+        personalizedUrl.searchParams.set("to", recipient);
+        window.history.replaceState(null, "", personalizedUrl);
+      }
       unwrapButton.disabled = true;
       giftScreen.classList.add("unwrap");
       giftScreen.querySelector(".gift-caption").textContent = "Surprise aa raha hai...";
